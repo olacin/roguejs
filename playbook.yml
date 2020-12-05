@@ -1,0 +1,52 @@
+---
+
+- name: Configure droplet crontab
+  hosts: all
+  remote_user: root
+  tasks:
+    - name: Ensure exit node rotation every 10 min
+      cron:
+        name: "exit node rotation"
+        minute: "*/10"
+        job: "/usr/local/bin/docker-compose -f /app/docker-compose.yml exec -T proxy torproxy.sh -n"
+      tags:
+        - configuration
+    - name: Install pip
+      apt:
+        name: python3-pip
+        state: present
+        update_cache: yes
+      tags:
+        - configuration
+    - name: Install docker and docker-compose python packages
+      pip:
+        name:
+          - docker
+          - docker-compose
+      tags:
+        - configuration
+    - name: Copy file with owner and permissions
+      copy:
+        src: app
+        dest: /
+      tags:
+        - configuration
+    - name: Stop existing services
+      community.general.docker_compose:
+        project_src: /app
+        state: absent
+      tags:
+        - deployment
+    - name: Deploy services
+      community.general.docker_compose:
+        project_src: /app
+        build: yes
+      environment:
+        EMAIL: "{{ vault_email }}"
+        PASSWORD: "{{ vault_password }}"
+        PHONE: "{{ vault_phone }}"
+        TWILIO_SID: "{{ vault_twilio_sid }}"
+        TWILIO_TOKEN: "{{ vault_twilio_token }}"
+        WEBHOOK_URL: "{{ vault_webhook_url }}"
+      tags:
+        - deployment

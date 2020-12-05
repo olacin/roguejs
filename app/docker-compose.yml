@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  roguejs:
+    build: .
+    container_name: crawler
+    environment:
+      - EMAIL=${EMAIL}
+      - PASSWORD=${PASSWORD}
+      - PHONE=${PHONE}
+      - TWILIO_SID=${TWILIO_SID}
+      - TWILIO_TOKEN=${TWILIO_TOKEN}
+      - WEBHOOK_URL=${WEBHOOK_URL}
+    restart: unless-stopped
+    depends_on:
+      - proxy
+
+  proxy:
+    image: dperson/torproxy
+    container_name: proxy
+    ports:
+      - 127.0.0.1:8118:8118
+    volumes:
+      - ./config/torrc:/etc/tor/torrc:ro
+    restart: unless-stopped
